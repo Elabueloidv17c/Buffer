@@ -1,0 +1,10 @@
+﻿  CCanvas.cpp
+c:\users\funka\desktop\buffer\buffer\ccanvas.cpp(75): warning C4018: '<': no coinciden signed/unsigned
+c:\users\funka\desktop\buffer\buffer\ccanvas.cpp(90): warning C4018: '<': no coinciden signed/unsigned
+c:\users\funka\desktop\buffer\buffer\ccanvas.cpp(126): warning C4018: '<': no coinciden signed/unsigned
+c:\users\funka\desktop\buffer\buffer\ccanvas.cpp(176): warning C4018: '<': no coinciden signed/unsigned
+c:\users\funka\desktop\buffer\buffer\ccanvas.cpp(261): warning C4018: '>=': no coinciden signed/unsigned
+c:\users\funka\desktop\buffer\buffer\ccanvas.cpp(273): warning C4018: '>=': no coinciden signed/unsigned
+  Source.cpp
+  Generando código...
+  Buffer.vcxproj -> C:\Users\funka\Desktop\Buffer\Debug\Buffer.exe
