@@ -3,6 +3,7 @@
 CCanvas::CCanvas()
 {
 	m_buffer = nullptr;
+	m_fBuffer = nullptr;
 }
 
 CCanvas::~CCanvas()
@@ -12,25 +13,20 @@ CCanvas::~CCanvas()
 		delete[] m_buffer;
 		m_buffer = nullptr;
 	}
-}
 
-void CCanvas::Delete()
-{
-	m_buffer = nullptr;
-
-	m_format = UNSET;
-	m_columns = 0;
-	m_lines = 0;
-	m_pitch = 0;
-}
-
-void CCanvas::Initialize(Format format, int lines, int columns, unsigned char value)
-{
-	if (lines <= 0 || columns <= 0)
+	if (m_fBuffer != nullptr)
 	{
-		std::cout << "The size input is invalid, the buffer will be created with '1 X 1' size" << std::endl;
-		lines = 1;
-		columns = 1;
+		delete[] m_fBuffer;
+		m_fBuffer = nullptr;
+	}
+}
+
+void CCanvas::Initialize(EFormat format, int lines, int columns, unsigned char* value)
+{
+	if (m_fBuffer != nullptr)
+	{
+		std::cout << "The buffer was already created with channels of 4 bytes" << std::endl;
+		return;
 	}
 
 	if (m_buffer != nullptr)
@@ -39,34 +35,43 @@ void CCanvas::Initialize(Format format, int lines, int columns, unsigned char va
 		return;
 	}
 
+	if (lines <= 0 || columns <= 0)
+	{
+		std::cout << "The size input is invalid, the buffer will be created with '1 X 1' size" << std::endl;
+		lines = 1;
+		columns = 1;
+	}
+
 	switch (format)
 	{
-	case(R8):
+	case(R):
 
-		std::cout << "Format: R8" << std::endl;
+		std::cout << "Format: R_8" << std::endl;
 		break;
 
-	case(R8G8):
+	case(RG):
 
-		std::cout << "Format: R8G8" << std::endl;
+		std::cout << "Format: RG_8" << std::endl;
 		break;
 
-	case(R8G8B8):
+	case(RGB):
 
-		std::cout << "Format: R8G8B8" << std::endl;
+		std::cout << "Format: RGB_8" << std::endl;
 		break;
 
-	case(R8G8B8A8):
-		std::cout << "Format: R8G8B8A8" << std::endl;
+	case(RGBA):
+		std::cout << "Format: RGBA_8" << std::endl;
 		break;
 	}
 
 	m_format = format;
 	m_lines = lines;
 	m_columns = columns;
+	m_subdivision = SUBDIVISIONS;
 
 	m_pitch = lines * format;
 	m_buffer = (unsigned char*) malloc (lines * columns * format);
+	m_endBuffer = m_buffer + (lines * columns * format) - 1;
 
 	for (size_t i = 0; i < m_columns; i++)
 	{
@@ -74,147 +79,387 @@ void CCanvas::Initialize(Format format, int lines, int columns, unsigned char va
 		{
 			for (size_t k = 0; k < m_format; k++)
 			{
-				m_buffer[(i * m_pitch) + (j * m_format) + k] = value;
+				m_buffer[(i * m_pitch) + (j * m_format) + k] = *value;
 			}
 		}
 	}
 }
 
-void CCanvas::SetValue(float U, float V, unsigned char value)
+void CCanvas::Initialize(EFormat format, int lines, int columns, float* value)
 {
-	if (U >= 0 && U <= 1 && V >= 0 && V <= 1)
+	if (m_fBuffer != nullptr)
 	{
+		std::cout << "The buffer already exist" << std::endl;
+		return;
+	}
 
-		unsigned int position = (((int)(U * (m_lines - 1) * m_format) + (((int)(V * (m_columns - 1))) * m_pitch)));
+	if (m_buffer != nullptr)
+	{
+		std::cout << "The buffer was already created with channels of 4 bytes" << std::endl;
+		return;
+	}
 
-		for (size_t i = 0; i < m_format; i++)
+	if (lines <= 0 || columns <= 0)
+	{
+		std::cout << "The size input is invalid, the buffer will be created with '1 X 1' size" << std::endl;
+		lines = 1;
+		columns = 1;
+	}
+
+	switch (format)
+	{
+	case(R):
+
+		std::cout << "Format: R_F32" << std::endl;
+		break;
+
+	case(RG):
+
+		std::cout << "Format: RG_F32" << std::endl;
+		break;
+
+	case(RGB):
+
+		std::cout << "Format: RGB_F32" << std::endl;
+		break;
+
+	case(RGBA):
+		std::cout << "Format: RGBA_F32" << std::endl;
+		break;
+	}
+
+	m_format = format;
+	m_lines = lines;
+	m_columns = columns;
+	m_subdivision = SUBDIVISIONS;
+
+	m_pitch = lines * m_format;
+	m_fBuffer = (float*)malloc(lines * columns * m_format);
+	m_fEndBuffer = m_fBuffer + (lines * columns * m_format) - 1;
+
+	for (size_t i = 0; i < m_columns; i++)
+	{
+		for (size_t j = 0; j < m_lines; j++)
 		{
-			m_buffer[position + i] = value;
+			for (size_t k = 0; k < m_format; k++)
+			{
+				m_fBuffer[(i * m_pitch) + (j * m_format) + k] = *value;
+			}
 		}
-	}
-
-	else
-	{
-		std::cout << "Positions out of range" << std::endl;
-	}
-}
-
-unsigned char* CCanvas::GetValue(float U, float V)
-{
-	if (U >= 0 && U <= 1 && V >= 0 && V <= 1)
-	{
-		return m_buffer + (((int) (U * (m_lines - 1) * m_format) + (((int) (V * (m_columns - 1))) * m_pitch)));
-	}
-
-	else
-	{
-		std::cout << "Positions out of range" << std::endl;
-		return m_buffer;
 	}
 }
 
 void CCanvas::PrintArray()
 {
-	for (size_t i = 0; i < m_columns; i++)
+	if (m_buffer != nullptr)
 	{
-		for (size_t j = 0; j < m_lines; j++)
+		for (size_t i = 0; i < m_columns; i++)
 		{
-			std::cout << "|'";
-
-			if (m_format > 1)
+			for (size_t j = 0; j < m_lines; j++)
 			{
+				std::cout << "|'";
+
 				for (size_t k = 0; k < m_format; k++)
 				{
-					std::cout << m_buffer[(i * m_pitch) + (j * m_format) + k];
+					std::cout << m_buffer[(i * m_pitch) + (j * m_format) + k] << " ";
 				}
 
 				std::cout << "'|	";
 			}
 
-			else
-			{
-				std::cout << m_buffer[(i * m_columns) + j] << "'|	";
-			}
+			std::cout << std::endl << std::endl;
 		}
 
 		std::cout << std::endl << std::endl;
 	}
 
-	std::cout << std::endl << std::endl;
-}
-
-void CCanvas::DrawLine(float U, float V, unsigned char value)
-{
-	if (U >= 0 && U <= 1 && V >= 0 && V <= 1)
+	if (m_fBuffer != nullptr)
 	{
-		unsigned int position = (((int)(U * (m_lines - 1) * m_format) + (((int)(V * (m_columns - 1))) * m_pitch)));
-		unsigned int start = (int) (U * (m_lines - 1) * m_format);
-		long index = 0;
-
-		while (start < m_pitch)
+		for (size_t i = 0; i < m_columns; i++)
 		{
-			m_buffer[position + (index++)] = value;
-			start++;
-		}
-	}
-
-	else
-	{
-		std::cout << "Positions out of range" << std::endl;
-	}
-}
-
-void CCanvas::DrawColumn(float U, float V, unsigned char value)
-{
-	if (U < m_columns && V < m_lines)
-	{
-		unsigned int position = (((int)(U * (m_lines - 1) * m_format) + (((int)(V * (m_columns - 1))) * m_pitch)));
-		size_t arraySize = m_pitch * m_lines;
-
-		while (position < arraySize)
-		{
-			for (size_t i = 0; i < m_format; i++)
+			for (size_t j = 0; j < m_lines; j++)
 			{
-				m_buffer[position + i] = value;
+				std::cout << "|'";
+
+				for (size_t k = 0; k < m_format; k++)
+				{
+					unsigned char toPrint = (unsigned char)(m_fBuffer[(i * m_pitch) + (j * m_format) + k] * 255);
+
+					std::cout << toPrint << " ";
+				}
+
+				std::cout << "'|	";
 			}
 
-			position += m_pitch;
+			std::cout << std::endl << std::endl;
 		}
-	}
 
-	else
-	{
-		std::cout << "Positions out of range" << std::endl;
+		std::cout << std::endl << std::endl;
+
 	}
 }
 
-void CCanvas::Copy(const CCanvas& original, Sampler filter)
+void CCanvas::Delete()
 {
-	unsigned int format = m_format;
+	m_buffer = nullptr;
+	m_fBuffer = nullptr;
 
-	if (original.m_format < m_format)
+	m_endBuffer = nullptr;
+	m_fEndBuffer = nullptr;
+
+	m_subdivision = 0.0f;
+	m_format = UNSET;
+
+	m_columns = 0;
+	m_lines = 0;
+	m_pitch = 0;
+}
+
+void CCanvas::SetValue(float U, float V, unsigned char* pixel, EFormat format)
+{
+	if (U > 1.0f) { U = 1.0f; }
+	if (U < 0.0f) { U = 0.0f; }
+	if (V > 1.0f) { V = 1.0f; }
+	if (V < 0.0f) { V = 0.0f; }
+
+	if (format > m_format)
 	{
-		format = original.m_format;
+		format = m_format;
 	}
+
+	unsigned int position = (((int)(U * (m_lines - 1)) * m_format) + (((int)(V * (m_columns - 1))) * m_pitch));
+	unsigned int index = 0;
+
+	if (m_buffer != nullptr)
+	{
+		while (index < format)
+		{
+			m_buffer[position + index] = pixel[index];
+			index++;
+		}
+
+		while (index < m_format)
+		{
+			m_buffer[position + index++] = (unsigned char)0;
+		}
+	}
+
+	if (m_fBuffer != nullptr)
+	{
+		while (index < format)
+		{
+			m_fBuffer[position + index] = (float) (pixel[index] / 255.0f);
+			index++;
+		}
+
+		while (index < m_format)
+		{
+			m_fBuffer[position + index++] = 0.0f;
+		}
+	}
+}
+
+void CCanvas::SetValue(float U, float V, float* pixel, EFormat format)
+{
+	if (U > 1.0f) { U = 1.0f; }
+	if (U < 0.0f) { U = 0.0f; }
+	if (V > 1.0f) { V = 1.0f; }
+	if (V < 0.0f) { V = 0.0f; }
+
+	if (*pixel > 1.0f) { *pixel = 1.0f; }
+	if (*pixel < 0.0f) { *pixel = 0.0f; }
+
+	if (format > m_format)
+	{
+		format = m_format;
+	}
+
+	unsigned int position = (((int)(U * (m_lines - 1)) * m_format) + (((int)(V * (m_columns - 1))) * m_pitch));
+	unsigned int index = 0;
+
+	if (m_buffer != nullptr)
+	{
+		while (index < format)
+		{
+			m_buffer[position + index] = (unsigned char) (pixel[index] * 255);
+			index++;
+		}
+
+		while (index < m_format)
+		{
+			m_buffer[position + index++] = (unsigned char)0;
+		}
+	}
+
+	if (m_fBuffer != nullptr)
+	{
+		while (index < format)
+		{
+			m_fBuffer[position + index] = pixel[index];
+			index++;
+		}
+
+		while (index < m_format)
+		{
+			m_fBuffer[position + index++] = 0.0f;
+		}
+	}
+}
+
+void CCanvas::DrawLine(float U1, float V1, float U2, float V2, unsigned char* pixel, EFormat format)
+{
+	//Ensuring valid indices
+	if (U1 > 1.0f) { U1 = 1.0f; }
+	if (U1 < 0.0f) { U1 = 0.0f; }
+	if (V1 > 1.0f) { V1 = 1.0f; }
+	if (V1 < 0.0f) { V1 = 0.0f; }
+
+	if (U2 > 1.0f) { U2 = 1.0f; }
+	if (U2 < 0.0f) { U2 = 0.0f; }
+	if (V2 > 1.0f) { V2 = 1.0f; }
+	if (V2 < 0.0f) { V2 = 0.0f; }
+
+	//Setting values in the right order (if the first point is to the right)
+	if (U1 > U2)
+	{
+		float tempU = U1;
+		float tempV = V1;
+
+		U1 = U2;
+		V1 = V2;
+
+		U2 = tempU;
+		V2 = tempV;
+	}
+
+	//Creating the variables to calculate the inclination of the line 
+	float m = m_subdivision * ((V2 - V1)/(U2 - U1));
+	float index = 0;
+
+
+	//Setting the information in the pixels
+	for (float i = U1; i < U2 + m_subdivision;)
+	{
+		SetValue(i, V1 + (m * index), pixel, format);
+
+		index += 1.0f;
+		i += m_subdivision;
+	}
+}
+
+void CCanvas::DrawLine(float U1, float V1, float U2, float V2, float* pixel, EFormat format)
+{
+	//Ensuring valid indices
+	if (*pixel > 1.0f) { *pixel = 1.0f; }
+	if (*pixel < 0.0f) { *pixel = 0.0f; }
+
+	if (U1 > 1.0f) { U1 = 1.0f; }
+	if (U1 < 0.0f) { U1 = 0.0f; }
+	if (V1 > 1.0f) { V1 = 1.0f; }
+	if (V1 < 0.0f) { V1 = 0.0f; }
+
+	if (U2 > 1.0f) { U2 = 1.0f; }
+	if (U2 < 0.0f) { U2 = 0.0f; }
+	if (V2 > 1.0f) { V2 = 1.0f; }
+	if (V2 < 0.0f) { V2 = 0.0f; }
+
+	if (*pixel > 1.0f) { *pixel = 1.0f; }
+	if (*pixel < 0.0f) { *pixel = 0.0f; }
+
+	//Setting values in the right order (if the first point is to the right)
+	if (U1 > U2)
+	{
+		float tempU = U1;
+		float tempV = V1;
+
+		U1 = U2;
+		V1 = V2;
+
+		U2 = tempU;
+		V2 = tempV;
+	}
+
+	//Creating the variables to calculate the inclination of the line 
+	float m = m_subdivision * ((V2 - V1) / (U2 - U1));
+	float index = 0;
+
+	//Setting the information in the pixels
+	for (float i = U1; i < U2 + m_subdivision;)
+	{
+		SetValue(i, V1 + (m * index), pixel, format);
+
+		index += 1.0f;
+		i += m_subdivision;
+	}
+}
+
+void* CCanvas::GetValue(float U, float V, EFormat& format)
+{
+	if (U > 1.0f) { U = 1.0f; }
+	if (U < 0.0f) { U = 0.0f; }
+	if (V > 1.0f) { V = 1.0f; }
+	if (V < 0.0f) { V = 0.0f; }
+
+	format = m_format;
+
+	if (m_buffer != nullptr)
+	{
+		return m_buffer + (((int)(U * (m_lines - 1)) * m_format) + (((int)(V * (m_columns - 1))) * m_pitch));
+	}
+
+	if (m_fBuffer != nullptr)
+	{
+		return m_fBuffer + (((int)(U * (m_lines - 1)) * m_format) + (((int)(V * (m_columns - 1))) * m_pitch));
+	}
+}
+
+//-----------------------------------------------------------------------------------------
+void CCanvas::Copy(CCanvas& original, ESampler filter)
+{
+	EFormat currentFormat;
 
 	if (filter == POINT)
 	{
 		std::cout << "Filter: Point" << std::endl;
 
-		for (float i = 0.0f; i <= 1.01f;)
+		for (float i = 0.0f; i < 1.0f + m_subdivision;)
 		{
-			for (float j = 0.0f; j <= 1.01f;)
+			for (float j = 0.0f; j < 1.0f + m_subdivision;)
 			{
-				for (size_t k = 0; k < format; k++)
+				if (original.m_buffer != nullptr)
 				{
-					m_buffer[((int)(i * (m_lines - 1)) * m_pitch) + ((int)(j * (m_columns - 1)) * m_format) + k] = original.m_buffer
-					[((int)(i * (original.m_lines - 1)) * original.m_pitch) + ((int)(j * (original.m_columns - 1)) * original.m_format) + k];
+					unsigned char* currentPixel = (unsigned char*) original.GetValue(j, i, currentFormat);
+
+					if (m_buffer != nullptr)
+					{
+						SetValue(j, i, currentPixel, currentFormat);
+					}
+
+					if (m_fBuffer != nullptr)
+					{
+						float* floatPixel = new float[currentFormat];
+
+						for (int k = 0; k < currentFormat; k++)
+						{
+							floatPixel[k] = (currentPixel[k] / 255.0f);
+						}
+
+						SetValue(j, i, currentPixel, currentFormat);
+
+						delete[] floatPixel;
+					}
 				}
 
-				j += SUBDIVISIONS;
+				if (original.m_fBuffer != nullptr)
+				{
+					float* currentPixel = (float*) original.GetValue(j, i, currentFormat);
+					SetValue(j, i, currentPixel, currentFormat);
+				}
+
+				j += m_subdivision;
 			}
 
-			i += SUBDIVISIONS;
+			i += m_subdivision;
 		}
 	}
 
@@ -222,72 +467,87 @@ void CCanvas::Copy(const CCanvas& original, Sampler filter)
 	{
 		std::cout << "Filter: Bilinear" << std::endl;
 
-		int X = 0;
-		int Y = 0;
-		int position = 0;
-		
-		int originalX = 0;
-		int originalY = 0;
-		int originalPosition = 0;
-
-		int currentValue = 0;
-		int numValues = 1;
-
-		for (float i = 0.0f; i <= 1.01f;)
+		for (float i = 0.0f; i < 1.0f + m_subdivision;)
 		{
-			for (float j = 0.0f; j <= 1.01f;)
+			for (float j = 0.0f; j < 1.0f + m_subdivision;)
 			{
-				for (size_t k = 0; k < format; k++)
+				unsigned short divisor = 1;
+				unsigned char* currentPixel = (unsigned char*)original.GetValue(j, i, currentFormat);
+
+				//Creating a copy of the current pixel and assigning the values from the original to it
+				unsigned short*	pixelCopy = new unsigned short[currentFormat];
+
+				for (int k = 0; k < currentFormat; k++)
 				{
-					X = ((int)(j * (m_columns - 1)) * m_format);
-					Y = ((int)(i * (m_lines - 1)) * m_pitch);
-					originalX = ((int)(j * (original.m_columns - 1)) * original.m_format);
-					originalY = ((int)(i * (original.m_lines - 1)) * original.m_pitch);
-
-					position = Y + X + k;
-					originalPosition = originalY + originalX + k;
-
-					numValues = 1;
-					currentValue = (int) original.m_buffer[originalPosition];
-					
-					for (size_t z = 1; z <= BILINEAR; z++)
-					{
-						if (originalX + (z * original.m_format) < original.m_pitch)
-						{
-							currentValue += (int)original.m_buffer[originalPosition + (z * original.m_format)];
-							numValues++;
-						}
-						
-						if (originalX >= (z * original.m_format))
-						{
-							currentValue += (int)original.m_buffer[originalPosition - (z * original.m_format)];
-							numValues++;
-						}
-						
-						if ((originalPosition + (original.m_pitch * z)) < (original.m_lines * original.m_columns * original.m_format))
-						{
-							currentValue += (int)original.m_buffer[originalPosition + (z * original.m_pitch)];
-							numValues++;
-						}
-						
-						if (originalPosition >= (original.m_pitch * z))
-						{
-							currentValue += (int)original.m_buffer[originalPosition - (z * original.m_pitch)];
-							numValues++;
-						}
-					}
-
-					for (size_t z = 0; z < format; z++)
-					{
-						m_buffer[position + z] = currentValue / numValues;
-					}
-
+					pixelCopy[k] = (unsigned int) currentPixel[k];
 				}
 
-				j += SUBDIVISIONS;
+				//Adding the values of the adjacent pixels
+				for (int k = 1; k <= BILINEAR; k++)
+				{
+					//Left pixel
+					if (currentPixel - (currentFormat * k) >= original.m_buffer)
+					{
+						for (int l = 0; l < currentFormat; l++)
+						{
+							pixelCopy[l] += (unsigned int) *(currentPixel - currentFormat + l);
+						}
+
+						divisor++;
+					}
+
+					//Right pixel
+					if ((currentPixel - original.m_buffer) * currentFormat + (currentFormat * k) < original.m_pitch)
+					{
+						for (int l = 0; l < currentFormat; l++)
+						{
+							pixelCopy[l] += (unsigned int) * (currentPixel + currentFormat + l);
+						}
+
+						divisor++;
+					}
+
+					//Pixel above
+					if ((currentPixel - original.m_pitch * k) >= original.m_buffer)
+					{
+						for (int l = 0; l < currentFormat; l++)
+						{
+							pixelCopy[l] += (unsigned int) * (currentPixel - original.m_pitch + l);
+						}
+
+						divisor++;
+					}
+
+					//Pixel below
+					if ((currentPixel + original.m_pitch * k) <= original.m_endBuffer)
+					{
+						for (int l = 0; l < currentFormat; l++)
+						{
+							pixelCopy[l] += (unsigned int) * (currentPixel + original.m_pitch + l);
+						}
+
+						divisor++;
+					}
+				}
+
+				//Calculating the final value of the pixel by averaging
+				unsigned char* newPixel = new unsigned char[currentFormat];
+
+				for (int k = 0; k < currentFormat; k++)
+				{
+					newPixel[k] = pixelCopy[k] / divisor;
+				}
+
+				SetValue(j, i, newPixel, currentFormat);
+
+				delete[] newPixel;
+				delete[] pixelCopy;
+
+				divisor = 1;
+				j += m_subdivision;
 			}
 
-			i += SUBDIVISIONS;
+			i += m_subdivision;
 		}
 	}
 }

@@ -1,6 +1,2 @@
-﻿  CCanvas.cpp
-d:\uad\5\gráficas computacionales i\buffer\buffer\ccanvas.cpp(247): warning C4267: '=': conversión de 'size_t' a 'int'; posible pérdida de datos
-d:\uad\5\gráficas computacionales i\buffer\buffer\ccanvas.cpp(248): warning C4267: '=': conversión de 'size_t' a 'int'; posible pérdida de datos
-  Source.cpp
-  Generando código...
+﻿  Source.cpp
   Buffer.vcxproj -> D:\UAD\5\Gráficas computacionales I\Buffer\x64\Debug\Buffer.exe
